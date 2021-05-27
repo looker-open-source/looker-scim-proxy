@@ -1,0 +1,15 @@
+# Looker config
+looker.ini
+
+# Authentication secret
+.env
+
+# Dependency directories
+node_modules/
+
+# JS build
+build/
+
+# Logs
+logs
+*.log
