@@ -17,7 +17,7 @@ limitations under the License.
 import express from "express";
 import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
-import { Schema, ScimUser } from "../types";
+import { Schema, ScimUser, Users } from "../types";
 import { IUser } from "@looker/sdk/lib/4.0/models";
 import { userFound, resourceNotFound } from "../shared/responses";
 import { getUserRecord } from "../shared/dbFunctions";
@@ -67,9 +67,9 @@ export default app
         })
       );
 
-      const cleanedUsers: ScimUser[] = users
-        .map((u) => {
-          const dbUser = getUserRecord(String(u.id));
+      const cleanedUsers: ScimUser[] = await Promise.all(
+        users.map(async (u) => {
+          const dbUser: Users = await getUserRecord(String(u.id));
           const externalId = dbUser ? dbUser.external_id : "";
 
           return {
@@ -94,13 +94,15 @@ export default app
             ],
           };
         })
-        .filter((u) => u.externalId); // only return users that are in scim db
+      );
+
+      const filteredUsers = cleanedUsers.filter((u) => u.externalId); // only return users that are in scim db
 
       const listResponse = {
         schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
         totalResults:
-          users.length === count ? count * page + 1 : cleanedUsers.length, // assume more resources could exist
-        Resources: cleanedUsers,
+          users.length === count ? count * page + 1 : filteredUsers.length, // assume more resources could exist
+        Resources: filteredUsers,
         startIndex: startIndex,
         itemsPerPage: count,
       };
@@ -110,7 +112,9 @@ export default app
       Logger.info(
         `${req.method} ${
           req.baseUrl
-        } Complete 200: Users found {"ids": [${cleanedUsers.map((u) => u.id)}]}`
+        } Complete 200: Users found {"ids": [${filteredUsers.map(
+          (u) => u.id
+        )}]}`
       );
     })
   )
@@ -123,7 +127,7 @@ export default app
       const { id } = req.params;
       Logger.info(`${req.method} ${req.baseUrl}/${id} Start`);
 
-      const dbUser = getUserRecord(id);
+      const dbUser = await getUserRecord(id);
       if (dbUser === undefined) {
         resourceNotFound(req, res, "User not found in scim db", id);
         return;

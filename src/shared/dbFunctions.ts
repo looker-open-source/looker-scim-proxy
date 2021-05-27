@@ -14,92 +14,90 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-require("dotenv").config();
-import low from "lowdb";
-import FileSync from "lowdb/adapters/FileSync";
+import { Datastore } from "@google-cloud/datastore";
 import { Users, Schema, ScimUser, ScimErrorSchema } from "../types";
 import { Request, Response } from "express-serve-static-core/index";
 import Logger from "./logger";
 
+const datastore = new Datastore();
+
 // insert user record into scim db
-export const insertUserRecord = (
+export const insertUserRecord = async (
   req: Request,
   looker_id: string,
   external_id: string,
   email: string
 ) => {
-  const adapter = new FileSync<Schema>(process.env.PATH_TO_DB!);
-  const dbUser = low(adapter)
-    .get("users")
-    .push({
+  const entity = {
+    key: datastore.key(["users", looker_id]),
+    data: {
       looker_id: looker_id,
       external_id: external_id,
       email: email,
-    })
-    .write();
+    },
+  };
 
+  const response = await datastore.insert(entity);
   Logger.info(
     `${req.method} ${req.baseUrl} User written to scim db {"id":"${looker_id}", "externalId":"${external_id}", "email":"${email}"}`
   );
-
-  return dbUser;
+  return response;
 };
 
 // get user record from scim db
-export const getUserRecord = (looker_id: string) => {
-  const adapter = new FileSync<Schema>(process.env.PATH_TO_DB!);
-  const dbUser = low(adapter)
-    .get("users")
-    .find({ looker_id: looker_id })
-    .value();
+export const getUserRecord = async (looker_id: string) => {
+  const query = datastore
+    .createQuery("users")
+    .filter("looker_id", "=", looker_id);
 
-  return dbUser;
+  const [data] = await datastore.runQuery(query);
+  return data[0];
 };
 
 // get user record by email and external id from scim db
-export const getUserRecordByEmail = (email: string, externalId?: string) => {
-  const adapter = new FileSync<Schema>(process.env.PATH_TO_DB!);
-  const dbUser = low(adapter)
-    .get("users")
-    .find((u) => u.external_id === externalId || u.email === email)
-    .value();
+export const getUserRecordByEmail = async (
+  email: string,
+  externalId?: string
+) => {
+  const query = datastore
+    .createQuery("users")
+    .filter("external_id", "=", externalId!)
+    .filter("email", "=", email);
 
-  return dbUser;
+  const [data] = await datastore.runQuery(query);
+  return data[0];
 };
 
 // update user record into scim db
-export const updateUserRecord = (
+export const updateUserRecord = async (
   req: Request,
   looker_id: string,
+  external_id: string,
   email: string
 ) => {
-  const adapter = new FileSync<Schema>(process.env.PATH_TO_DB!);
-  const dbUser = low(adapter)
-    .get("users")
-    .find({ looker_id: looker_id })
-    .assign({
+  const entity = {
+    key: datastore.key(["users", looker_id]),
+    data: {
+      looker_id: looker_id,
+      external_id: external_id,
       email: email,
-    })
-    .write();
+    },
+  };
 
+  const response = await datastore.upsert(entity);
   Logger.info(
     `${req.method} ${req.baseUrl}/${looker_id} User email updated in scim db`
   );
-
-  return dbUser;
+  return response;
 };
 
 // remove user record into scim db
-export const deleteUserRecord = (req: Request, looker_id: string) => {
-  const adapter = new FileSync<Schema>(process.env.PATH_TO_DB!);
-  const dbUser = low(adapter)
-    .get("users")
-    .remove({ looker_id: looker_id })
-    .write();
+export const deleteUserRecord = async (req: Request, looker_id: string) => {
+  const key = datastore.key(["users", looker_id]);
 
+  const response = await datastore.delete(key);
   Logger.info(
     `${req.method} ${req.baseUrl}/${looker_id} User deleted in scim db`
   );
-
-  return dbUser;
+  return response;
 };

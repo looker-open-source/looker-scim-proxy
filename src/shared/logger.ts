@@ -15,6 +15,9 @@ limitations under the License.
 */
 
 import winston from "winston";
+import { LoggingWinston } from "@google-cloud/logging-winston";
+
+const loggingWinston = new LoggingWinston();
 
 const levels = {
   error: 0,
@@ -51,11 +54,7 @@ const transports = [
   new winston.transports.Console({
     format: winston.format.combine(winston.format.colorize({ all: true })), // only colorizing full lines in console -> https://github.com/winstonjs/winston/issues/1416
   }),
-  new winston.transports.File({
-    filename: "logs/error.log",
-    level: "error",
-  }),
-  new winston.transports.File({ filename: "logs/all.log" }),
+  loggingWinston,
 ];
 
 const Logger = winston.createLogger({

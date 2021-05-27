@@ -33,7 +33,7 @@ export default app.delete(
     const { id } = req.params;
     Logger.info(`${req.method} ${req.baseUrl}/${id} Start`);
 
-    const dbUser = getUserRecord(id);
+    const dbUser = await getUserRecord(id);
     if (dbUser === undefined) {
       resourceNotFound(req, res, "User not found in scim db", id);
       return;
@@ -47,10 +47,11 @@ export default app.delete(
       return;
     }
 
-    deleteUserRecord(req, id);
-    res.status(204).send();
-    Logger.info(
-      `${req.method} ${req.baseUrl}/${id} Complete 204: User deleted`
-    );
+    await deleteUserRecord(req, id).then(() => {
+      res.status(204).send();
+      Logger.info(
+        `${req.method} ${req.baseUrl}/${id} Complete 204: User deleted`
+      );
+    });
   })
 );

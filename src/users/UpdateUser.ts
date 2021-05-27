@@ -17,7 +17,7 @@ limitations under the License.
 import express from "express";
 import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
-import { Schema, ScimUser, ScimUserOperationSchema } from "../types";
+import { Schema, ScimUser, ScimUserOperationSchema, Users } from "../types";
 import { IUser } from "@looker/sdk/lib/4.0/models";
 import {
   customLookerUserAttSchema,
@@ -51,7 +51,7 @@ export default app
         `${req.method} ${req.baseUrl}/${id} Start: ${JSON.stringify(reqUser)}`
       );
 
-      let dbUser = getUserRecord(id);
+      let dbUser: Users = await getUserRecord(id);
       if (dbUser === undefined) {
         resourceNotFound(req, res, "User not found in scim db", id);
         return;
@@ -74,7 +74,15 @@ export default app
             email: email,
           })
         );
-        dbUser = updateUserRecord(req, id, email);
+        dbUser = await updateUserRecord(
+          req,
+          id,
+          dbUser.external_id,
+          email
+        ).then(() => {
+          return getUserRecord(id);
+        });
+
         Logger.info(
           `${req.method} ${req.baseUrl}/${id} User email updated in looker`
         );
@@ -118,7 +126,7 @@ export default app
         )}`
       );
 
-      let dbUser = getUserRecord(id);
+      let dbUser: Users = await getUserRecord(id);
       if (dbUser === undefined) {
         resourceNotFound(req, res, "User not found in scim db", id);
         return;
@@ -192,7 +200,15 @@ export default app
         const lookerUserCredsEmail = await sdk.ok(
           sdk.update_user_credentials_email(Number(id), { email: email })
         );
-        dbUser = updateUserRecord(req, id, email);
+        dbUser = await updateUserRecord(
+          req,
+          id,
+          dbUser.external_id,
+          email
+        ).then(() => {
+          return getUserRecord(id);
+        });
+
         Logger.info(
           `${req.method} ${req.baseUrl}/${id} User email updated in looker`
         );

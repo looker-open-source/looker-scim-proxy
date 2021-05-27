@@ -41,7 +41,7 @@ export default app.post(
     );
 
     // lookup user in DB via externalId and email
-    const dbUser = getUserRecordByEmail(email, reqUser.externalId);
+    const dbUser = await getUserRecordByEmail(email, reqUser.externalId);
 
     // if user is in DB then respond 409
     if (dbUser !== undefined) {
@@ -61,12 +61,18 @@ export default app.post(
 
     // if user found in looker then write user to DB and return 409
     if (lookerUser !== undefined) {
-      insertUserRecord(req, lookerUserId, reqUser.externalId!, email);
-      resourceAlreadyExists(
+      await insertUserRecord(
         req,
-        res,
-        `Resource user record in looker {"id":"${lookerUserId}", "externalId":"${reqUser.externalId}", "email":"${email}"}`
-      );
+        lookerUserId,
+        reqUser.externalId!,
+        email
+      ).then(() => {
+        resourceAlreadyExists(
+          req,
+          res,
+          `Resource user record in looker {"id":"${lookerUserId}", "externalId":"${reqUser.externalId}", "email":"${email}"}`
+        );
+      });
       return;
 
       // else create user in looker
@@ -117,12 +123,15 @@ export default app.post(
     }
 
     // write user to DB and respond 201
-    insertUserRecord(req, lookerUserId, reqUser.externalId!, email);
-    reqUser.id = lookerUserId;
-    res.status(201).send(reqUser);
+    await insertUserRecord(req, lookerUserId, reqUser.externalId!, email).then(
+      () => {
+        reqUser.id = lookerUserId;
+        res.status(201).send(reqUser);
 
-    Logger.info(
-      `${req.method} ${req.baseUrl} Complete 201: User created in looker and scim db {"id":"${lookerUserId}", "externalId":"${reqUser.externalId}", "email":"${email}"}`
+        Logger.info(
+          `${req.method} ${req.baseUrl} Complete 201: User created in looker and scim db {"id":"${lookerUserId}", "externalId":"${reqUser.externalId}", "email":"${email}"}`
+        );
+      }
     );
   })
 );
