@@ -109,3 +109,34 @@ export const updateUserAttributes = async (
 
   return true;
 };
+
+// return all user setting UAs as key:value pairs
+export const getUserAttributes = async (sdk: Looker40SDK, userId: string) => {
+  // need to grab all UAs to ensure the value is returned in correct type
+  const allUAs = await sdk.ok(
+    sdk.all_user_attributes({
+      fields: "id,name,type,is_system",
+      sorts: "name",
+    })
+  );
+
+  const userUAs = await sdk
+    .ok(
+      sdk.user_attribute_user_values({
+        user_id: Number(userId),
+        fields: "user_attribute_id,name,value,source",
+      })
+    )
+    .then((ua) =>
+      ua
+        .filter((u) => u.source === "User Setting")
+        .map((u) => {
+          const type = allUAs.filter((ua) => ua.id === u.user_attribute_id)[0]
+            .type;
+          const value = type === "number" ? Number(u.value) : u.value;
+          return { [u.name!]: value };
+        })
+    );
+
+  return Object.assign({}, ...userUAs);
+};

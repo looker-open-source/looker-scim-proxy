@@ -1,6 +1,6 @@
 # Looker SCIM Proxy
 
-SCIM (System for Cross-domain Identity Management) is a lightweight RESTful JSON based open standard communication between an Identity Provider and applications, providing full user lifecycle management. SCIM will allow admins to:
+SCIM (System for Cross-domain Identity Management) is a lightweight RESTful JSON based open standard communication between an IdP (Identity Provider) and applications, providing full user lifecycle management. SCIM will allow admins to:
 
 - streamline processes to auto provision / deprovision users from Looker
 - enable all changes to user profiles, groups, and custom attribute details to be updated immediately
@@ -35,7 +35,7 @@ All installation and configuration steps can be found in the [docs](docs/):
 
 - [`docs/installation-and-deployment.md`](docs/installation-and-deployment.md)
 - [`docs/configure-okta.md`](docs/configure-okta.md)
-- [`docs/configure-azure-ad.md`](docs/configure-azure-ad.md) (coming soon)
+- [`docs/configure-azure-ad.md`](docs/configure-azure-ad.md)
 
 <br />
 

@@ -19,6 +19,7 @@ import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
 import { Schema, ScimUser } from "../types";
 import { IUser } from "@looker/sdk/lib/4.0/models";
+import { getUserAttributes } from "../shared/userAttributes";
 import { userFound, resourceNotFound } from "../shared/responses";
 import { getUserRecord } from "../shared/dbFunctions";
 import { asyncMiddleware } from "../shared/middleware";
@@ -138,12 +139,15 @@ export default app
         return;
       }
 
+      const userAttributes = await getUserAttributes(sdk, id);
+
       userFound(
         req,
         res,
         `User found {"externalId":"${dbUser.external_id}", "email":"${lookerUser.email}"}`,
         dbUser,
-        lookerUser
+        lookerUser,
+        userAttributes
       );
     })
   );

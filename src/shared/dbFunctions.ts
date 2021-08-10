@@ -71,19 +71,20 @@ export const getUserRecordByEmail = (email: string, externalId?: string) => {
 export const updateUserRecord = (
   req: Request,
   looker_id: string,
-  email: string
+  column: "email" | "external_id",
+  value: string
 ) => {
   const adapter = new FileSync<Schema>(process.env.PATH_TO_DB!);
   const dbUser = low(adapter)
     .get("users")
     .find({ looker_id: looker_id })
     .assign({
-      email: email,
+      [column]: value,
     })
     .write();
 
   Logger.info(
-    `${req.method} ${req.baseUrl}/${looker_id} User email updated in scim db`
+    `${req.method} ${req.baseUrl}/${looker_id} User ${column} updated in scim db`
   );
 
   return dbUser;

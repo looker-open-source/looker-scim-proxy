@@ -15,12 +15,18 @@ limitations under the License.
 */
 
 import { genericError } from "../shared/responses";
-import * as AuthUtils from "./auth_token_utils"
-import { Request, Response, NextFunction } from "express-serve-static-core/index";
+import * as AuthUtils from "./auth_token_utils";
+import {
+  Request,
+  Response,
+  NextFunction,
+} from "express-serve-static-core/index";
 
 // middleware for all routes. handles generic errors and auth
-export function asyncMiddleware(fn: (req: Request, res: Response, next: NextFunction) => void) {
-  return function(req: Request, res: Response, next: NextFunction) {
+export function asyncMiddleware(
+  fn: (req: Request, res: Response, next: NextFunction) => void
+) {
+  return function (req: Request, res: Response, next: NextFunction) {
     const { authorization } = req.headers;
     if (!authorization) {
       genericError(req, res, "Must send authorization header", 401);
@@ -40,8 +46,8 @@ export function asyncMiddleware(fn: (req: Request, res: Response, next: NextFunc
 
     // return internal server error if any uncaught errors happen inside routes
     Promise.resolve(fn(req, res, next)).catch((err: Error) => {
-      const msg = `Internal Server Error. ${err.toString()}`
-      genericError(req, res, msg, 500)
-    })
-  }
-};
+      const msg = `Internal Server Error. ${err.toString()}`;
+      genericError(req, res, msg, 500);
+    });
+  };
+}

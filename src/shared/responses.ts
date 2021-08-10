@@ -26,13 +26,19 @@ export const userFound = (
   res: Response,
   message: string,
   dbUser: Users,
-  lookerUser: IUser
+  lookerUser: IUser,
+  userAttributes:
+    | {
+        [key: string]: any;
+      }
+    | undefined
 ) => {
   const user: ScimUser = {
-    schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
-    ...(req.body[customLookerUserAttSchema] && {
-      [customLookerUserAttSchema]: req.body[customLookerUserAttSchema],
-    }),
+    schemas: [
+      "urn:ietf:params:scim:schemas:core:2.0:User",
+      customLookerUserAttSchema,
+    ],
+    [customLookerUserAttSchema]: userAttributes,
     meta: {
       resourceType: "User",
     },

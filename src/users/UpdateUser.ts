@@ -22,6 +22,7 @@ import { IUser } from "@looker/sdk/lib/4.0/models";
 import {
   customLookerUserAttSchema,
   updateUserAttributes,
+  getUserAttributes,
 } from "../shared/userAttributes";
 import {
   invalidSyntax,
@@ -74,10 +75,15 @@ export default app
             email: email,
           })
         );
-        dbUser = updateUserRecord(req, id, email);
+        dbUser = updateUserRecord(req, id, "email", email);
         Logger.info(
           `${req.method} ${req.baseUrl}/${id} User email updated in looker`
         );
+      }
+
+      // update externalId in scim db
+      if (dbUser.external_id !== reqUser.externalId) {
+        dbUser = updateUserRecord(req, id, "external_id", reqUser.externalId);
       }
 
       // if user attributes in schema, set all UAs
@@ -100,7 +106,8 @@ export default app
         res,
         `User updated {"externalId":"${dbUser.external_id}", "email":"${email}"}`,
         dbUser,
-        lookerUser
+        lookerUser,
+        reqUser[customLookerUserAttSchema]
       );
     })
   )
@@ -146,6 +153,8 @@ export default app
             case 'emails[type eq "work"].value':
               email = o.value;
               break;
+            case "externalId":
+              dbUser = updateUserRecord(req, id, "external_id", o.value);
           }
           // alternative key value for okta - https://developer.okta.com/docs/reference/scim/scim-20/#update-a-specific-user-patch
           if (!("path" in o)) {
@@ -154,10 +163,17 @@ export default app
               updatedUser.is_disabled = !patchValue.active;
             }
           }
-        }
-        // approach for user attributes for azure ad
-        // path will be sent as: "urn:ietf:params:scim:schemas:extension:LookerUserAttributes:2.0:User:CUSTOM_ATTRIBUTE_NAME"
-        else if (o.op.toLowerCase() === "add") {
+        } else if (o.op.toLowerCase() === "add") {
+          switch (o.path) {
+            case "name.givenName":
+              updatedUser.first_name = o.value;
+              break;
+            case "name.familyName":
+              updatedUser.last_name = o.value;
+              break;
+          }
+          // approach for user attributes for azure ad
+          // path will be sent as: "urn:ietf:params:scim:schemas:extension:LookerUserAttributes:2.0:User:CUSTOM_ATTRIBUTE_NAME"
           const regex = o.path!.match(customLookerUserAttSchema);
           if (regex !== null) {
             const uaKey = o.path!.substring(
@@ -192,7 +208,7 @@ export default app
         const lookerUserCredsEmail = await sdk.ok(
           sdk.update_user_credentials_email(Number(id), { email: email })
         );
-        dbUser = updateUserRecord(req, id, email);
+        dbUser = updateUserRecord(req, id, "email", email);
         Logger.info(
           `${req.method} ${req.baseUrl}/${id} User email updated in looker`
         );
@@ -207,12 +223,15 @@ export default app
         }
       }
 
+      const userAttributes = await getUserAttributes(sdk, id);
+
       userFound(
         req,
         res,
         `User updated {"externalId":"${dbUser.external_id}", "email":"${email}"}`,
         dbUser,
-        lookerUser
+        lookerUser,
+        userAttributes
       );
     })
   );
