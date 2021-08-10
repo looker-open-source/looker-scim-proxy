@@ -21,11 +21,10 @@ import { CreateUser, UpdateUser, ReadUser, DeleteUser } from "./users";
 import { CreateGroup, UpdateGroup, ReadGroup, DeleteGroup } from "./groups";
 
 const app = express();
-
-const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
 
 if (!process.env.SCIM_AUTH_SECRET) {
-  throw new Error("No SCIM_AUTH_SECRET environment variable set.")
+  throw new Error("No SCIM_AUTH_SECRET environment variable set.");
 }
 
 app

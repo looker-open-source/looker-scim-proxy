@@ -71,6 +71,10 @@ export default app
       );
 
       for (const o of patchBody.Operations) {
+        if (o.path === "externalId") {
+          // todo - add/remove/update record in group db table
+          continue;
+        }
         switch (o.op.toLowerCase()) {
           case "add": // members only (add and remove flows are the same)
           case "remove":

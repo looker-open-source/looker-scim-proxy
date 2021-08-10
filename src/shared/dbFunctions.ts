@@ -75,6 +75,7 @@ export const updateUserRecord = async (
   external_id: string,
   email: string
 ) => {
+  // entire object must be sent to datastore
   const entity = {
     key: datastore.key(["users", looker_id]),
     data: {
@@ -86,7 +87,7 @@ export const updateUserRecord = async (
 
   const response = await datastore.upsert(entity);
   Logger.info(
-    `${req.method} ${req.baseUrl}/${looker_id} User email updated in scim db`
+    `${req.method} ${req.baseUrl}/${looker_id} User updated in scim db`
   );
   return response;
 };
