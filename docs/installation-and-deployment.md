@@ -5,13 +5,14 @@
 1. Clone this repo
    - Use the `main` branch for VM deployment. If you're launching on App Engine, checkout the `app_engine_deploy` branch
 1. Run `yarn install`
-1. Add file `looker.ini` for Looker API credentials (see Looker SDK docs for more info):
+1. Add a `looker.ini` file for API service account credentials (see [Looker SDK docs](https://github.com/looker-open-source/sdk-codegen) for more info):
    ```
    [Looker]
    base_url=https://YOUR_LOOKER_INSTANCE.com
    client_id=abc
    client_secret=def
    ```
+   **Note**: This API key requires admin level credentials in order to perform CRUD operations on users, groups, and user attributes resources. Protect this key and always configure your version control system to ignore the `looker.ini` and `.env` files
 1. Add `.env` file for app secrets and path to database:
    ```
    PORT=8080
