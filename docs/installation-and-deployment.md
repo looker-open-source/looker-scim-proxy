@@ -41,9 +41,11 @@
 
 This app should be easy to deploy on App Engine, which will automatically provide a domain name and TLS. You can use firewall rules to restrict inbound traffic if desired. If the Looker instance has restricted network ingress then you can configure Serverless VPC Access to connect to your VPC or Cloud VPN.
 
-- After you have made any modifications, you can deploy to App Engine by running the command: `gcloud app deploy`
+- GCP projects can only contain a single App Engine deployment, so we recommend creating a [new project](https://console.cloud.google.com/projectcreate) dedicated to the SCIM server
+  - Note: After creating a new project, you may need to wait up to 1h for your first App Engine deployment. Otherwise you may see build errors like: `Service 'containerregistry.googleapis.com' is not enabled for consumer 'project:{project_name}’` or `ERROR: failed to export: failed to write image to the following tags...`
+- After you have made any modifications, you can deploy to App Engine by running the command: `gcloud app deploy --project=YOUR_PROJECT_NAME`
 - App Engine will automatically run a custom build step `gcp-build` to compile TypeScript to JavaScript, outputing the files to the `build` folder
-- tail the logs by running: `gcloud app logs tail -s default`
+- tail the logs by running: `gcloud app logs tail -s default --project=YOUR_PROJECT_NAME` or by visiting: `https://console.cloud.google.com/logs/query?project=YOUR_PROJECT_NAME`
 
 ## Option 2: Deploy on GCP VM with SSL Cert
 
