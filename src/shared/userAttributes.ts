@@ -50,7 +50,7 @@ export const updateUserAttributes = async (
   // get user attribute user values to know which to skip
   const userUAs = await sdk.ok(
     sdk.user_attribute_user_values({
-      user_id: Number(userId),
+      user_id: userId,
       fields: "user_attribute_id,name,value,source",
     })
   );
@@ -78,9 +78,7 @@ export const updateUserAttributes = async (
         Logger.info(
           `${req.method} ${req.baseUrl}/${userId} Deleting attribute {"id":"${ua.id}", "name":"${ua.name}"}`
         );
-        await sdk.ok(
-          sdk.delete_user_attribute_user_value(Number(userId), ua.id!)
-        );
+        await sdk.ok(sdk.delete_user_attribute_user_value(userId, ua.id!));
         continue;
       }
 
@@ -90,7 +88,7 @@ export const updateUserAttributes = async (
         }", "name":"${ua.name}", "value":"${userAttributes[ua.name!]}"}`
       );
       const updatedUA = await sdk.ok(
-        sdk.set_user_attribute_user_value(Number(userId), ua.id!, {
+        sdk.set_user_attribute_user_value(userId, ua.id!, {
           value: userAttributes[ua.name!],
         })
       );
@@ -123,7 +121,7 @@ export const getUserAttributes = async (sdk: Looker40SDK, userId: string) => {
   const userUAs = await sdk
     .ok(
       sdk.user_attribute_user_values({
-        user_id: Number(userId),
+        user_id: userId,
         fields: "user_attribute_id,name,value,source",
       })
     )

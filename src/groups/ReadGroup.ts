@@ -72,7 +72,7 @@ export default app
         return {
           schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
           displayName: g.name!,
-          id: String(g.id),
+          id: g.id!,
           members: null,
           meta: {
             resourceType: "Group",
@@ -112,12 +112,12 @@ export default app
       Logger.info(`${req.method} ${req.baseUrl}/${id} Start`);
 
       try {
-        const lookerGroup = await sdk.ok(sdk.group(Number(id)));
+        const lookerGroup = await sdk.ok(sdk.group(id));
 
         const cleanedGroup = {
           schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
           displayName: lookerGroup.name!,
-          id: String(lookerGroup.id),
+          id: lookerGroup.id,
           members: null,
           meta: {
             resourceType: "Group",

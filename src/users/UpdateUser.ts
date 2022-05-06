@@ -60,7 +60,7 @@ export default app
 
       // update user in looker
       const lookerUser = await sdk.ok(
-        sdk.update_user(Number(id), {
+        sdk.update_user(id, {
           first_name: reqUser.name.givenName,
           last_name: reqUser.name.familyName,
           is_disabled: !reqUser.active,
@@ -71,9 +71,7 @@ export default app
       // if email also updated, update looker and scim db
       if (email !== lookerUser.email) {
         const lookerUserCredsEmail = await sdk.ok(
-          sdk.update_user_credentials_email(Number(id), {
-            email: email,
-          })
+          sdk.update_user_credentials_email(id, { email: email })
         );
         dbUser = updateUserRecord(req, id, "email", email);
         Logger.info(
@@ -193,7 +191,7 @@ export default app
 
       // update user in looker
       const lookerUser = await sdk.ok(
-        sdk.update_user(Number(id), {
+        sdk.update_user(id, {
           ...(updatedUser.first_name && { first_name: updatedUser.first_name }),
           ...(updatedUser.last_name && { last_name: updatedUser.last_name }),
           ...("is_disabled" in updatedUser && {
@@ -206,7 +204,7 @@ export default app
       // if email also updated, update looker and scim db
       if (email !== "") {
         const lookerUserCredsEmail = await sdk.ok(
-          sdk.update_user_credentials_email(Number(id), { email: email })
+          sdk.update_user_credentials_email(id, { email: email })
         );
         dbUser = updateUserRecord(req, id, "email", email);
         Logger.info(

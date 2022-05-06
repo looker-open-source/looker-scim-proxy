@@ -18,9 +18,9 @@
     "node": "14"
   },
   "dependencies": {
-    "@looker/sdk": "^21.0.9",
-    "@looker/sdk-node": "^21.0.9",
-    "@looker/sdk-rtl": "^21.0.9",
+    "@looker/sdk": "^22.4.2",
+    "@looker/sdk-node": "^22.4.2",
+    "@looker/sdk-rtl": "^21.3.3",
     "@types/lowdb": "^1.0.9",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",

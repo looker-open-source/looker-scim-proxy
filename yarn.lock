@@ -11,34 +11,34 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@looker/sdk-node@^21.0.9":
-  version "21.0.9"
-  resolved "https://registry.yarnpkg.com/@looker/sdk-node/-/sdk-node-21.0.9.tgz#b6aa7c286837b9ef2997b8cc61200becbfb45f8d"
-  integrity sha512-Cy4A1Zxfhdd/wTs9dB6zBsVKH+3lbVydgsK9jotzjE2rcmoXb4DlXZ5SCbYqL/ZrvZfVTsxHagzd9G6JA22KTg==
+"@looker/sdk-node@^22.4.2":
+  version "22.4.2"
+  resolved "https://registry.yarnpkg.com/@looker/sdk-node/-/sdk-node-22.4.2.tgz#d352218fd2202880a0679162614b3392668e73d1"
+  integrity sha512-B6NzhUnJCc5Pm21ULP4kgxlrS6HYM2sa28OaRqzSAYbVJJpRlyClmmLvVsOBGW8puBdBAWOr/AqoyyV1AdtiIg==
   dependencies:
-    "@looker/sdk" "^21.0.9"
-    "@looker/sdk-rtl" "^21.0.9"
+    "@looker/sdk" "^22.4.2"
+    "@looker/sdk-rtl" "^21.3.3"
     ini "^1.3.8"
     readable-stream "^3.4.0"
     request "^2.88.0"
     request-promise-native "^1.0.8"
 
-"@looker/sdk-rtl@^21.0.9":
-  version "21.0.9"
-  resolved "https://registry.yarnpkg.com/@looker/sdk-rtl/-/sdk-rtl-21.0.9.tgz#f710f60b707f498f4a6d0d391180028a583da655"
-  integrity sha512-7RZ7npEiGKcAbn2u5m7ULM9myzAulTWL7F+bk0x0Y1Z7MArAT6QLNSf+Vf86y+fUreBmT+S2g6Rz07aUgeAhDQ==
+"@looker/sdk-rtl@^21.3.3":
+  version "21.3.3"
+  resolved "https://registry.yarnpkg.com/@looker/sdk-rtl/-/sdk-rtl-21.3.3.tgz#d37b6a73403ea05a588a57bfa703763e4a11e904"
+  integrity sha512-oT6dZtd0/xmvpfS/gsPdPvWTu2TQvRLX0RjavkaN6jmHju4nMSFokVDTz7/YlT6FUY4+ai5G1DVkQb/+xgwMjw==
   dependencies:
     ini "^1.3.8"
     readable-stream "^3.4.0"
     request "^2.88.0"
     request-promise-native "^1.0.8"
 
-"@looker/sdk@^21.0.9":
-  version "21.0.9"
-  resolved "https://registry.yarnpkg.com/@looker/sdk/-/sdk-21.0.9.tgz#dcd611c61feb7dabc3d51505f684f895c2a27e3f"
-  integrity sha512-v3Nmuowr05bJ/QXViDVXJxyRXVuW+RJvWXZq/boyzxoxNEU2/CNpsVOhQZO+A+RFsd4IL1PVaWIrBN0JaZCrbQ==
+"@looker/sdk@^22.4.2":
+  version "22.4.2"
+  resolved "https://registry.yarnpkg.com/@looker/sdk/-/sdk-22.4.2.tgz#5ffcefa482f383c05ecc0abe5ecd3e28619fb77d"
+  integrity sha512-knKdmTLa5Zh6dOMu54Oq+5B7fHp9P+SXIYnTOBzxfRRcVm7WNnCS7nZ7grmm3SY1kyuLDK+IZVxhOTrnmAv/iA==
   dependencies:
-    "@looker/sdk-rtl" "^21.0.9"
+    "@looker/sdk-rtl" "^21.3.3"
     ini "^1.3.8"
     readable-stream "^3.4.0"
     request "^2.88.0"

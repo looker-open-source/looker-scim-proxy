@@ -57,11 +57,11 @@ export default app.post(
     const lookerUser = await sdk
       .ok(sdk.search_users({ email: email }))
       .then((u) => u[0]);
-    let lookerUserId = lookerUser ? String(lookerUser.id) : "";
+    let lookerUserId = lookerUser ? lookerUser.id : "";
 
     // if user found in looker then write user to DB and return 409
     if (lookerUser !== undefined) {
-      insertUserRecord(req, lookerUserId, reqUser.externalId!, email);
+      insertUserRecord(req, lookerUserId!, reqUser.externalId!, email);
       resourceAlreadyExists(
         req,
         res,
@@ -77,7 +77,7 @@ export default app.post(
           last_name: reqUser.name.familyName,
         })
       );
-      lookerUserId = String(newUser.id);
+      lookerUserId = newUser.id;
 
       const newUserWithEmail = await sdk
         .ok(
@@ -107,7 +107,7 @@ export default app.post(
             req,
             res,
             sdk,
-            lookerUserId,
+            lookerUserId!,
             reqUser[customLookerUserAttSchema]!
           ))
         ) {
@@ -117,7 +117,7 @@ export default app.post(
     }
 
     // write user to DB and respond 201
-    insertUserRecord(req, lookerUserId, reqUser.externalId!, email);
+    insertUserRecord(req, lookerUserId!, reqUser.externalId!, email);
     reqUser.id = lookerUserId;
     res.status(201).send(reqUser);
 
