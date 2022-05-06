@@ -162,7 +162,7 @@ const updateGroupName = async (
 ) => {
   try {
     const updatedGroup = await sdk.ok(
-      sdk.update_group(Number(id), { name: groupName })
+      sdk.update_group(id, { name: groupName })
     );
     Logger.info(
       `${req.method} ${req.baseUrl}/${id} Updated displayName to: "${groupName}"`
@@ -180,9 +180,7 @@ const removeUserGroup = async (
   userId: string,
   groupId: string
 ) => {
-  const oldMember = sdk.ok(
-    sdk.delete_group_user(Number(groupId), Number(userId))
-  );
+  const oldMember = sdk.ok(sdk.delete_group_user(groupId, userId));
   Logger.info(
     `${req.method} ${req.baseUrl}/${groupId} Removed member: "${userId}"`
   );
@@ -191,9 +189,7 @@ const removeUserGroup = async (
 
 // add user to a group
 const addUserGroup = async (req: Request, userId: string, groupId: string) => {
-  const newMember = sdk.ok(
-    sdk.add_group_user(Number(groupId), { user_id: Number(userId) })
-  );
+  const newMember = sdk.ok(sdk.add_group_user(groupId, { user_id: userId }));
   Logger.info(
     `${req.method} ${req.baseUrl}/${groupId} Added member: "${userId}"`
   );
@@ -210,14 +206,14 @@ const updateGroupMembers = async (
   try {
     const oldGroupMembers = await sdk.ok(
       sdk.all_group_users({
-        group_id: Number(id),
+        group_id: id,
         fields: "id,email",
       })
     );
 
     const oldGroupMemberPromises = await Promise.all(
       oldGroupMembers.map(async (u) => {
-        return removeUserGroup(req, String(u.id), id);
+        return removeUserGroup(req, u.id!, id);
       })
     ).then(async () => {
       const newGroupMemberPromises = await Promise.all(

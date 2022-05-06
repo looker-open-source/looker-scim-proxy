@@ -32,7 +32,7 @@ export default app.delete(
     Logger.info(`${req.method} ${req.baseUrl}/${id}  Start`);
 
     try {
-      await sdk.ok(sdk.delete_group(Number(id)));
+      await sdk.ok(sdk.delete_group(id));
       res.status(204).send();
       Logger.info(
         `${req.method} ${req.baseUrl}/${id} Complete 204: Group deleted`

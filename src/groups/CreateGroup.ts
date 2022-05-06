@@ -38,7 +38,7 @@ export default app.post(
     const lookerGroup = await sdk
       .ok(sdk.search_groups({ name: reqGroup.displayName }))
       .then((g) => g[0]);
-    let lookerGroupId = lookerGroup ? String(lookerGroup.id) : "";
+    let lookerGroupId = lookerGroup ? lookerGroup.id : "";
 
     // if group found in looker then return 409
     if (lookerGroup !== undefined) {
@@ -54,7 +54,7 @@ export default app.post(
       const newGroup = await sdk.ok(
         sdk.create_group({ name: reqGroup.displayName })
       );
-      lookerGroupId = String(newGroup.id);
+      lookerGroupId = newGroup.id!;
     }
 
     // respond 201 with group with looker id

@@ -20,9 +20,9 @@
   "dependencies": {
     "@google-cloud/datastore": "^6.3.1",
     "@google-cloud/logging-winston": "^4.0.4",
-    "@looker/sdk": "^21.0.9",
-    "@looker/sdk-node": "^21.0.9",
-    "@looker/sdk-rtl": "^21.0.9",
+    "@looker/sdk": "^22.4.2",
+    "@looker/sdk-node": "^22.4.2",
+    "@looker/sdk-rtl": "^21.3.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "typescript": "^4.2.3",

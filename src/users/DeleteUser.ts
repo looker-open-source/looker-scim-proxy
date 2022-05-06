@@ -40,7 +40,7 @@ export default app.delete(
     }
 
     try {
-      await sdk.ok(sdk.delete_user(Number(id)));
+      await sdk.ok(sdk.delete_user(id));
       Logger.info(`${req.method} ${req.baseUrl}/${id} User deleted in looker`);
     } catch (error) {
       resourceNotFound(req, res, "User not found in looker", id);

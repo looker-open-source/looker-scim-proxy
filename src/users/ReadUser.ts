@@ -70,7 +70,7 @@ export default app
 
       const cleanedUsers: ScimUser[] = await Promise.all(
         users.map(async (u) => {
-          const dbUser: Users = await getUserRecord(String(u.id));
+          const dbUser: Users = await getUserRecord(u.id!);
           const externalId = dbUser ? dbUser.external_id : "";
 
           return {
@@ -78,7 +78,7 @@ export default app
             meta: {
               resourceType: "User",
             },
-            id: String(u.id),
+            id: u.id,
             externalId: externalId,
             active: !u.is_disabled!,
             userName: u.email!,
@@ -137,7 +137,7 @@ export default app
       let lookerUser: IUser = {};
 
       try {
-        lookerUser = await sdk.ok(sdk.user(Number(id)));
+        lookerUser = await sdk.ok(sdk.user(id));
       } catch (error) {
         resourceNotFound(req, res, "User not found in looker", id);
         return;
