@@ -1,8 +1,16 @@
 # Configure Okta
 
-## Connect Okta to SCIM server
+## Create SAML app integration
 
-First set up a SAML app for Looker, configure the user attribute mappings, and assign the app to users. You'll also probably want to put users in different groups.
+First set up a SAML app for Looker, configure the user attribute mappings, and assign the app to users. You'll also probably want to put users in different groups. If you already have a SAML app integrated with Looker, skip to the next section.
+
+> You must create a custom app integration for Looker. Do not use the [Looker app](https://saml-doc.okta.com/SAML_Docs/How-to-Configure-SAML-2.0-for-Looker.html) from the App Integration Catalog as it does not support SCIM.
+
+1. If you don't have an Okta account, you can sign up [here](https://developer.okta.com/signup/) for a free developer account.
+1. Create a new app integration with the `SAML 2.0` sign-in method.
+1. Follow the [Looker documentation](https://docs.looker.com/admin-options/security/saml-auth) to connect to Looker
+
+## Connect Okta to SCIM server
 
 Then [follow these steps](https://help.okta.com/en/prod/Content/Topics/Apps/Apps_App_Integration_Wizard_SCIM.htm) to enable provisioning for your Looker application.
 
@@ -16,6 +24,9 @@ Then [follow these steps](https://help.okta.com/en/prod/Content/Topics/Apps/Apps
   - Paste in a generated auth token
 - Enable "Create Users", "Update User Attributes", and "Deactivate Users"
 - Remove **all** unused attributes to prevent Okta from sending unnecessary requests to the SCIM server
+  - The minimum required attributes are: `userName`, `givenName`, `familyName`, `email`, and `emailType`
+  - Here's an example mapping including some additional user attributes:
+    ![Okta Attribute Mappings Example](okta-attribute-mappings-example.png)
 
 ## Syncing Existing Looker Users
 

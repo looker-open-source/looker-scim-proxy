@@ -1,10 +1,18 @@
 # Configure Azure AD
 
+## Create SAML app integration
+
+First set up a SAML app for Looker, configure the user attribute mappings, and assign the app to users. You'll also probably want to put users in different groups. If you already have a SAML app integrated with Looker, skip to the next section.
+
+> You must create a custom application for Looker. Do not use the [Looker app](https://docs.microsoft.com/en-us/azure/active-directory/saas-apps/looker-analytics-platform-tutorial) from the Azure AD Gallery as it does not support SCIM.
+
+1. If you don't have Azure AD, you can sign up [here](https://developer.microsoft.com/en-us/microsoft-365/dev-program) to join the free Microsoft 365 Developer Program and get a free environment for Azure AD.
+1. Create a enterprise application and enable single sign-on with `SAML 2.0`.
+1. Follow the [Looker documentation](https://docs.looker.com/admin-options/security/saml-auth) to connect to Looker
+
 ## Connect Azure AD to SCIM server
 
-First set up a SAML app for Looker, configure the user attribute mappings, and assign the app to users. You'll also probably want to put users in different groups.
-
-Then [follow these steps](https://docs.microsoft.com/en-us/azure/active-directory/app-provisioning/use-scim-to-provision-users-and-groups#integrate-your-scim-endpoint-with-the-aad-scim-client) to enable provisioning for your Looker application.
+Then [follow these steps](https://docs.microsoft.com/en-us/azure/active-directory/app-provisioning/use-scim-to-provision-users-and-groups#getting-started) to enable provisioning for your Looker application.
 
 - Admin Credentials
   - Tenant URL: `{{your_domain}}/scim/v2`
@@ -65,6 +73,8 @@ Then [follow these steps](https://docs.microsoft.com/en-us/azure/active-director
      ```
 
 1. Repeat as required
+1. Here's an example mapping including some additional user attributes:
+   ![Azure AD Attribute Mappings Example](azure-ad-attribute-mappings-example.png)
 
 A full tutorial for custom attribute mappings can be found [here](https://docs.microsoft.com/en-us/azure/active-directory/app-provisioning/customize-application-attributes).
 
