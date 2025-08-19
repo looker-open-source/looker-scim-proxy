@@ -23,7 +23,7 @@
     "@looker/sdk-rtl": "^21.3.3",
     "@types/lowdb": "^1.0.9",
     "dotenv": "^8.2.0",
-    "express": "^4.17.1",
+    "express": "^4.20.0",
     "lowdb": "^1.0.0",
     "winston": "^3.3.3"
   },
