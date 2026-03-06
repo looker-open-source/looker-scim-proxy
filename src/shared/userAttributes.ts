@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Looker40SDK } from "@looker/sdk/lib/4.0/methods";
+import type { Looker40SDK } from "@looker/sdk";
 import { Request, Response } from "express-serve-static-core/index";
 import { validationError } from "./responses";
 import Logger from "./logger";
@@ -92,7 +92,7 @@ export const updateUserAttributes = async (
           value: userAttributes[ua.name!],
         })
       );
-    } catch (error) {
+    } catch (error: any) {
       validationError(
         req,
         res,

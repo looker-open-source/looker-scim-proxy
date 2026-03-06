@@ -15,22 +15,20 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
-import { Schema, ScimUser } from "../types";
-import { IUser } from "@looker/sdk/lib/4.0/models";
+import { ScimUser } from "../types";
+import type { IUser } from "@looker/sdk";
 import { getUserAttributes } from "../shared/userAttributes";
 import { userFound, resourceNotFound } from "../shared/responses";
 import { getUserRecord } from "../shared/dbFunctions";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
 export default app
   // https://tools.ietf.org/html/rfc7644#section-3.4.2
-  // search for users with filter on userName and pagination
   .get(
     "/",
     asyncMiddleware(async (req: Request, res: Response) => {
@@ -43,8 +41,6 @@ export default app
         `${req.method} ${req.baseUrl} Start {"filter":"${filter}", "count":${count}, "startIndex":${startIndex}, "page":${page}}`
       );
 
-      // currently only set up with `eq` operater with `userName` (looker email)
-      // https://developer.okta.com/docs/reference/scim/scim-20/#determine-if-the-user-already-exists
       if (filter !== undefined) {
         const regex = String(filter).match(/userName eq "(.*)"/);
         if (regex !== null) {
@@ -95,12 +91,12 @@ export default app
             ],
           };
         })
-        .filter((u) => u.externalId); // only return users that are in scim db
+        .filter((u) => u.externalId);
 
       const listResponse = {
         schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
         totalResults:
-          users.length === count ? count * page + 1 : cleanedUsers.length, // assume more resources could exist
+          users.length === count ? count * page + 1 : cleanedUsers.length,
         Resources: cleanedUsers,
         startIndex: startIndex,
         itemsPerPage: count,
@@ -117,7 +113,6 @@ export default app
   )
 
   // https://tools.ietf.org/html/rfc7644#section-3.4.1
-  // get user by looker id
   .get(
     "/:id",
     asyncMiddleware(async (req: Request, res: Response) => {

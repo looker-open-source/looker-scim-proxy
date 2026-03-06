@@ -15,9 +15,8 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
-import { Schema, ScimUser } from "../types";
+import { ScimUser } from "../types";
 import {
   customLookerUserAttSchema,
   updateUserAttributes,
@@ -26,8 +25,8 @@ import { resourceAlreadyExists } from "../shared/responses";
 import { insertUserRecord, getUserRecordByEmail } from "../shared/dbFunctions";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
 // https://tools.ietf.org/html/rfc7644#section-3.3
@@ -68,8 +67,6 @@ export default app.post(
         `Resource user record in looker {"id":"${lookerUserId}", "externalId":"${reqUser.externalId}", "email":"${email}"}`
       );
       return;
-
-      // else create user in looker
     } else {
       const newUser = await sdk.ok(
         sdk.create_user({
@@ -79,7 +76,7 @@ export default app.post(
       );
       lookerUserId = newUser.id;
 
-      const newUserWithEmail = await sdk
+      await sdk
         .ok(
           sdk.create_user_credentials_email(newUser.id!, {
             email: email,
@@ -90,7 +87,7 @@ export default app.post(
             `${req.method} ${req.baseUrl} Looker user created {"id":"${lookerUserId}", "externalId":"${reqUser.externalId}", "email":"${email}"}`
           );
         })
-        .catch((error) => {
+        .catch((error: Error) => {
           resourceAlreadyExists(
             req,
             res,
@@ -100,7 +97,6 @@ export default app.post(
           return;
         });
 
-      // if user attributes in schema, set all UAs
       if (customLookerUserAttSchema in reqUser) {
         if (
           !(await updateUserAttributes(
@@ -116,7 +112,6 @@ export default app.post(
       }
     }
 
-    // write user to DB and respond 201
     insertUserRecord(req, lookerUserId!, reqUser.externalId!, email);
     reqUser.id = lookerUserId;
     res.status(201).send(reqUser);

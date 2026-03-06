@@ -16,7 +16,7 @@ limitations under the License.
 
 import { Users, Schema, ScimUser, ScimErrorSchema } from "../types";
 import { customLookerUserAttSchema } from "../shared/userAttributes";
-import { IUser } from "@looker/sdk/lib/4.0/models";
+import type { IUser } from "@looker/sdk";
 import { Request, Response } from "express-serve-static-core/index";
 import Logger from "./logger";
 
