@@ -110,7 +110,7 @@ export default app
         const lookerGroup = await sdk.ok(sdk.group(id));
 
         const cleanedGroup = {
-          schemas: ["urn:ietf:schemas:core:2.0:Group"],
+          schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
           displayName: lookerGroup.name!,
           id: lookerGroup.id,
           members: null,

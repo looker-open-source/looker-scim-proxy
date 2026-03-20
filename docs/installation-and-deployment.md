@@ -1,24 +1,21 @@
 # Installation and Deployment
 
+This proxy has been tested with **Okta** and **Azure AD** as SCIM IdPs. See [Configure Okta](configure-okta.md) and [Configure Azure AD](configure-azure-ad.md) for IdP-specific setup.
+
 ## Installation
 
 1. Clone this repo
    - Use the `main` branch for VM deployment. If you're launching on App Engine, checkout the `app_engine_deploy` branch
 1. Run `yarn install`
-1. Add a `looker.ini` file for API service account credentials (see [Looker SDK docs](https://github.com/looker-open-source/sdk-codegen) for more info):
+1. Add a `.env` file for app configuration and secrets. Copy from the example and fill in your values:
+   ```bash
+   cp .env.example .env
    ```
-   [Looker]
-   base_url=https://YOUR_LOOKER_INSTANCE.com
-   client_id=abc
-   client_secret=def
-   ```
-   **Note**: This API key requires admin level credentials in order to perform CRUD operations on users, groups, and user attributes resources. Protect this key and always configure your version control system to ignore the `looker.ini` and `.env` files
-1. Add `.env` file for app secrets and path to database:
-   ```
-   PORT=8080
-   PATH_TO_DB=./db.json # not required for App Engine deploy
-   SCIM_AUTH_SECRET=see setup below
-   ```
+   Required variables:
+   - **Server**: `PORT` (default 8080), `PATH_TO_DB` (e.g. `./db.json`; not required for App Engine deploy)
+   - **SCIM auth**: `SCIM_AUTH_SECRET` (see [Setup / Authentication](#setup--authentication) below)
+   - **Looker API**: `LOOKER_BASE_URL`, `LOOKER_CLIENT_ID`, `LOOKER_CLIENT_SECRET`, `LOOKER_VERIFY_SSL` (optional, default `true`)
+   **Note**: The Looker API credentials require admin level access to perform CRUD on users, groups, and user attributes. Protect `.env` and ensure your version control ignores it (it is listed in `.gitignore`).
 1. Run `yarn start-nodemon` to start the server locally
    - for App Engine, you will need to add your GCP credentials if you have not already done so. You can do this by running:
      - `gcloud auth application-default login`
@@ -47,7 +44,76 @@ This app should be easy to deploy on App Engine, which will automatically provid
 - App Engine will automatically run a custom build step `gcp-build` to compile TypeScript to JavaScript, outputing the files to the `build` folder
 - tail the logs by running: `gcloud app logs tail -s default --project=YOUR_PROJECT_NAME` or by visiting: `https://console.cloud.google.com/logs/query?project=YOUR_PROJECT_NAME`
 
-## Option 2: Deploy on GCP VM with SSL Cert
+## Option 2: Deploy on Cloud Run
+
+Cloud Run is well-suited for this proxy: it provides a managed HTTPS endpoint, scales to zero when idle, and requires no VM maintenance. Since SCIM traffic is low-volume, a single instance is sufficient.
+
+Cloud Run containers are stateless, so the `db.json` file is persisted via a [GCS FUSE volume mount](https://cloud.google.com/run/docs/configuring/services/cloud-storage-volume-mounts). The app reads and writes `db.json` as a normal local file — GCS FUSE handles the sync to a GCS bucket transparently. No code changes are required.
+
+### Prerequisites
+
+- A GCP project with billing enabled
+- `gcloud` CLI authenticated: `gcloud config set project YOUR_PROJECT`
+- APIs enabled: Cloud Run, Cloud Build, Secret Manager, Cloud Storage
+
+### 1. Create the GCS bucket for state
+
+```bash
+gsutil mb -l YOUR_REGION gs://YOUR_BUCKET_NAME
+echo '{"users":[]}' | gsutil cp - gs://YOUR_BUCKET_NAME/db.json
+```
+
+### 2. Store secrets in Secret Manager
+
+> **Production note**: Create a dedicated Looker API3 service account user (with admin
+> privileges) specifically for the SCIM proxy, rather than reusing a personal admin's
+> credentials. This ensures the proxy keeps working if the personal account is modified
+> or deactivated.
+
+```bash
+echo -n "YOUR_LOOKER_CLIENT_ID" | gcloud secrets create looker-client-id --data-file=-
+echo -n "YOUR_LOOKER_CLIENT_SECRET" | gcloud secrets create looker-client-secret --data-file=-
+echo -n "YOUR_SCIM_AUTH_SECRET" | gcloud secrets create scim-auth-secret --data-file=-
+```
+
+Grant the default Cloud Run service account access:
+
+```bash
+PROJECT_NUM=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
+for secret in looker-client-id looker-client-secret scim-auth-secret; do
+  gcloud secrets add-iam-policy-binding $secret \
+    --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor"
+done
+```
+
+### 3. Build and deploy
+
+```bash
+gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/looker-scim-proxy
+
+gcloud run deploy looker-scim-proxy \
+  --image gcr.io/$(gcloud config get-value project)/looker-scim-proxy \
+  --region YOUR_REGION \
+  --max-instances=1 \
+  --execution-environment gen2 \
+  --add-volume=name=gcs-db,type=cloud-storage,bucket=YOUR_BUCKET_NAME \
+  --add-volume-mount=volume=gcs-db,mount-path=/data \
+  --set-env-vars LOOKER_BASE_URL=https://YOUR_INSTANCE.cloud.looker.com,LOOKER_VERIFY_SSL=true,PATH_TO_DB=/data/db.json \
+  --set-secrets LOOKER_CLIENT_ID=looker-client-id:latest,LOOKER_CLIENT_SECRET=looker-client-secret:latest,SCIM_AUTH_SECRET=scim-auth-secret:latest \
+  --allow-unauthenticated
+```
+
+`--allow-unauthenticated` is required because IdPs (Azure AD, Okta) send SCIM requests directly. The proxy validates the Bearer token in its own middleware — this is the standard approach for SCIM endpoints.
+
+### 4. Verify
+
+```bash
+SERVICE_URL=$(gcloud run services describe looker-scim-proxy --region YOUR_REGION --format='value(status.url)')
+curl -s "$SERVICE_URL/alive"
+```
+
+## Option 3: Deploy on GCP VM with SSL Cert
 
 - create VM, Debian GNU/Linux 10 (buster), allow HTTP traffic
 - ensure firewall allows ingress on tcp:8080
@@ -73,6 +139,7 @@ sudo useradd -m -d /home/nodeapp nodeapp # scim server will run as nodeapp user
 sudo su - nodeapp
 git clone [REPO_URL]
 cd looker-scim-proxy
+# Create .env with the same variables as local (see Installation above)
 yarn install
 yarn start
 ```
