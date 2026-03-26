@@ -1,8 +1,8 @@
-# Looker config
-looker.ini
-
-# Authentication secret
+# Authentication secret and env
 .env
+
+# Example env (safe to commit)
+!.env.example
 
 # Dependency directories
 node_modules/

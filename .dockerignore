@@ -1,0 +1,8 @@
+node_modules/
+build/
+.env
+db.json
+*.log
+.git
+DEPLOY_PLAN.md
+PUSH_AND_PR.md

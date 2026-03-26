@@ -15,19 +15,17 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
 import { ScimGroup } from "../types";
 import { resourceNotFound } from "../shared/responses";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
 export default app
   // https://tools.ietf.org/html/rfc7644#section-3.4.2
-  // search for groups with filter on displayName and pagination
   .get(
     "/",
     asyncMiddleware(async (req: Request, res: Response) => {
@@ -39,8 +37,6 @@ export default app
         `${req.method} ${req.baseUrl} Start {"filter":"${filter}", "count":${count}, "startIndex":${startIndex}}`
       );
 
-      // currently only set up with `eq` operater with `displayName` (group name)
-      // https://docs.microsoft.com/en-us/azure/active-directory/app-provisioning/use-scim-to-provision-users-and-groups#get-group-by-displayname
       if (filter !== undefined) {
         const regex = String(filter).match(/displayName eq "(.*)"/);
         if (regex !== null) {
@@ -85,7 +81,7 @@ export default app
         totalResults:
           cleanedGroups.length === count
             ? count + startIndex
-            : cleanedGroups.length, // assume more resources could exist
+            : cleanedGroups.length,
         Resources: cleanedGroups,
         startIndex: startIndex,
         itemsPerPage: count,
@@ -104,7 +100,6 @@ export default app
   )
 
   // https://tools.ietf.org/html/rfc7644#section-3.4.1
-  // get group by looker id
   .get(
     "/:id",
     asyncMiddleware(async (req: Request, res: Response) => {

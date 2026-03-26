@@ -15,17 +15,15 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
 import { resourceNotFound } from "../shared/responses";
 import { deleteUserRecord, getUserRecord } from "../shared/dbFunctions";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
-// hard delete user (not used by okta)
 // https://tools.ietf.org/html/rfc7644#section-3.6
 export default app.delete(
   "/:id",

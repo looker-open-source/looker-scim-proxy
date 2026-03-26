@@ -15,13 +15,12 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
 import { resourceNotFound } from "../shared/responses";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
 // https://tools.ietf.org/html/rfc7644#section-3.6

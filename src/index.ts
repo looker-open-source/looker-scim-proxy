@@ -19,6 +19,7 @@ import express from "express";
 import Logger from "./shared/logger";
 import { CreateUser, UpdateUser, ReadUser, DeleteUser } from "./users";
 import { CreateGroup, UpdateGroup, ReadGroup, DeleteGroup } from "./groups";
+import SsoRoutes from "./sso";
 
 const app = express();
 
@@ -30,8 +31,10 @@ if (!process.env.SCIM_AUTH_SECRET) {
 
 app
   .use(express.json({ type: "application/scim+json" }))
+  .use(express.json())
   .use("/scim/v2/users", CreateUser, ReadUser, UpdateUser, DeleteUser)
   .use("/scim/v2/groups", CreateGroup, UpdateGroup, ReadGroup, DeleteGroup)
+  .use("/sso", SsoRoutes)
   .listen(port, () => Logger.info(`Scim server starting up on port ${port}`));
 
 app.get("/alive", (req, res) => {

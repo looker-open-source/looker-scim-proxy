@@ -15,14 +15,13 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
 import { ScimGroup } from "../types";
 import { resourceAlreadyExists } from "../shared/responses";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
 // https://tools.ietf.org/html/rfc7644#section-3.3
@@ -34,13 +33,11 @@ export default app.post(
       `${req.method} ${req.baseUrl} Start {"displayName":"${reqGroup.displayName}"}`
     );
 
-    // search for group via name
     const lookerGroup = await sdk
       .ok(sdk.search_groups({ name: reqGroup.displayName }))
       .then((g) => g[0]);
     let lookerGroupId = lookerGroup ? lookerGroup.id : "";
 
-    // if group found in looker then return 409
     if (lookerGroup !== undefined) {
       resourceAlreadyExists(
         req,
@@ -48,8 +45,6 @@ export default app.post(
         `Resource group record in looker {"id":"${lookerGroupId}", "externalId":"${reqGroup.externalId}", "displayName":"${reqGroup.displayName}"}`
       );
       return;
-
-      // else create group in looker
     } else {
       const newGroup = await sdk.ok(
         sdk.create_group({ name: reqGroup.displayName })
@@ -57,7 +52,6 @@ export default app.post(
       lookerGroupId = newGroup.id!;
     }
 
-    // respond 201 with group with looker id
     reqGroup.id = lookerGroupId;
     res.status(201).send(reqGroup);
     Logger.info(

@@ -15,21 +15,16 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
 import { ScimGroup, ScimGroupOperationSchema } from "../types";
 import { invalidSyntax, validationError } from "../shared/responses";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
-// Okta new custom integrations from App Integration Wizard (AIW) will use PUT request
-// Okta pre-built templates integrations from Okta Integration Network (OIN) will use PATCH request
-
 export default app
-  // update group object (displayName and/or members)
   // https://tools.ietf.org/html/rfc7644#section-3.5.1
   .put(
     "/:id",
@@ -48,7 +43,6 @@ export default app
         return;
       }
 
-      // if everything works, return 200 response with group object
       res.status(200).send(group);
       Logger.info(
         `${req.method} ${req.baseUrl}/${id} Complete 200: Group updated`
@@ -56,8 +50,6 @@ export default app
     })
   )
 
-  // update group object using a sequence operation values: "add", "remove", or "replace"
-  // options: (displayName: [replace], members: [add, remove, replace])
   // https://tools.ietf.org/html/rfc7644#section-3.5.2
   .patch(
     "/:id",
@@ -72,20 +64,19 @@ export default app
 
       for (const o of patchBody.Operations) {
         if (o.path === "externalId") {
-          // todo - add/remove/update record in group db table
           continue;
         }
         switch (o.op.toLowerCase()) {
-          case "add": // members only (add and remove flows are the same)
-          case "remove":
+          case "add":
+          case "remove": {
             const action = o.op.toLowerCase();
             if (o.value === undefined) {
               const regex = o.path!.match(/members\[value eq "(.*)"/);
               if (regex !== null) {
                 const userId = regex[1];
                 action === "add"
-                  ? addUserGroup(req, userId, id)
-                  : removeUserGroup(req, userId, id);
+                  ? await addUserGroup(req, userId, id)
+                  : await removeUserGroup(req, userId, id);
               } else {
                 invalidSyntax(
                   req,
@@ -96,14 +87,14 @@ export default app
               }
             } else if (Array.isArray(o.value)) {
               try {
-                const groupMemberPromises = await Promise.all(
+                await Promise.all(
                   o.value.map(async (u: any) => {
                     return action === "add"
                       ? addUserGroup(req, u.value, id)
                       : removeUserGroup(req, u.value, id);
                   })
                 );
-              } catch (error) {
+              } catch (error: any) {
                 validationError(req, res, error.message, id);
                 return;
               }
@@ -117,7 +108,8 @@ export default app
             }
 
             break;
-          case "replace": // members or displayName
+          }
+          case "replace":
             if (o.path === "displayName") {
               if (!(await updateGroupName(req, res, id, o.value))) {
                 return;
@@ -146,7 +138,6 @@ export default app
         }
       }
 
-      // if everything works, return 204 response with no body
       res.status(204).send();
       Logger.info(
         `${req.method} ${req.baseUrl}/${id} Complete 204: Group updated`
@@ -161,42 +152,39 @@ const updateGroupName = async (
   groupName: string
 ) => {
   try {
-    const updatedGroup = await sdk.ok(
-      sdk.update_group(id, { name: groupName })
-    );
+    await sdk.ok(sdk.update_group(id, { name: groupName }));
     Logger.info(
       `${req.method} ${req.baseUrl}/${id} Updated displayName to: "${groupName}"`
     );
     return true;
-  } catch (error) {
+  } catch (error: any) {
     validationError(req, res, error.message, id);
     return false;
   }
 };
 
-// remove user from a group
 const removeUserGroup = async (
   req: Request,
   userId: string,
   groupId: string
 ) => {
-  const oldMember = sdk.ok(sdk.delete_group_user(groupId, userId));
+  const oldMember = await sdk.ok(sdk.delete_group_user(groupId, userId));
   Logger.info(
     `${req.method} ${req.baseUrl}/${groupId} Removed member: "${userId}"`
   );
   return oldMember;
 };
 
-// add user to a group
 const addUserGroup = async (req: Request, userId: string, groupId: string) => {
-  const newMember = sdk.ok(sdk.add_group_user(groupId, { user_id: userId }));
+  const newMember = await sdk.ok(
+    sdk.add_group_user(groupId, { user_id: userId })
+  );
   Logger.info(
     `${req.method} ${req.baseUrl}/${groupId} Added member: "${userId}"`
   );
   return newMember;
 };
 
-// replace all members of group (remove all existing users and add new users)
 const updateGroupMembers = async (
   req: Request,
   res: Response,
@@ -211,19 +199,18 @@ const updateGroupMembers = async (
       })
     );
 
-    const oldGroupMemberPromises = await Promise.all(
+    await Promise.all(
       oldGroupMembers.map(async (u) => {
         return removeUserGroup(req, u.id!, id);
       })
-    ).then(async () => {
-      const newGroupMemberPromises = await Promise.all(
-        newUsers.map(async (u: any) => {
-          return addUserGroup(req, u.value, id);
-        })
-      );
-    });
+    );
+    await Promise.all(
+      newUsers.map(async (u: any) => {
+        return addUserGroup(req, u.value, id);
+      })
+    );
     return true;
-  } catch (error) {
+  } catch (error: any) {
     validationError(req, res, error.message, id);
     return false;
   }

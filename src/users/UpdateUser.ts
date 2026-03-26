@@ -15,10 +15,9 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
-import { Schema, ScimUser, ScimUserOperationSchema } from "../types";
-import { IUser } from "@looker/sdk/lib/4.0/models";
+import { ScimUser, ScimUserOperationSchema } from "../types";
+import type { IUser } from "@looker/sdk";
 import {
   customLookerUserAttSchema,
   updateUserAttributes,
@@ -32,15 +31,11 @@ import {
 import { updateUserRecord, getUserRecord } from "../shared/dbFunctions";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
-// Okta new custom integrations from App Integration Wizard (AIW) will use PUT request (with exception for enable/disabling user)
-// Okta pre-built templates integrations from Okta Integration Network (OIN) will use PATCH request
-
 export default app
-  // update user object (email, names, disable)
   // https://tools.ietf.org/html/rfc7644#section-3.5.1
   .put(
     "/:id",
@@ -58,7 +53,6 @@ export default app
         return;
       }
 
-      // update user in looker
       const lookerUser = await sdk.ok(
         sdk.update_user(id, {
           first_name: reqUser.name.givenName,
@@ -68,9 +62,8 @@ export default app
       );
       Logger.info(`${req.method} ${req.baseUrl}/${id} User updated in looker`);
 
-      // if email also updated, update looker and scim db
       if (email !== lookerUser.email) {
-        const lookerUserCredsEmail = await sdk.ok(
+        await sdk.ok(
           sdk.update_user_credentials_email(id, { email: email })
         );
         dbUser = updateUserRecord(req, id, "email", email);
@@ -79,12 +72,10 @@ export default app
         );
       }
 
-      // update externalId in scim db
       if (dbUser.external_id !== reqUser.externalId) {
         dbUser = updateUserRecord(req, id, "external_id", reqUser.externalId);
       }
 
-      // if user attributes in schema, set all UAs
       if (customLookerUserAttSchema in reqUser) {
         if (
           !(await updateUserAttributes(
@@ -111,7 +102,6 @@ export default app
   )
 
   // https://tools.ietf.org/html/rfc7644#section-3.5.2
-  // update 1+ attributes of user using a sequence operation values: "add", "remove", or "replace"
   .patch(
     "/:id",
     asyncMiddleware(async (req: Request, res: Response) => {
@@ -154,7 +144,6 @@ export default app
             case "externalId":
               dbUser = updateUserRecord(req, id, "external_id", o.value);
           }
-          // alternative key value for okta - https://developer.okta.com/docs/reference/scim/scim-20/#update-a-specific-user-patch
           if (!("path" in o)) {
             const patchValue: any = o.value;
             if ("active" in patchValue) {
@@ -170,8 +159,6 @@ export default app
               updatedUser.last_name = o.value;
               break;
           }
-          // approach for user attributes for azure ad
-          // path will be sent as: "urn:ietf:params:scim:schemas:extension:LookerUserAttributes:2.0:User:CUSTOM_ATTRIBUTE_NAME"
           const regex = o.path!.match(customLookerUserAttSchema);
           if (regex !== null) {
             const uaKey = o.path!.substring(
@@ -189,7 +176,6 @@ export default app
         }
       }
 
-      // update user in looker
       const lookerUser = await sdk.ok(
         sdk.update_user(id, {
           ...(updatedUser.first_name && { first_name: updatedUser.first_name }),
@@ -201,9 +187,8 @@ export default app
       );
       Logger.info(`${req.method} ${req.baseUrl}/${id} User updated in looker`);
 
-      // if email also updated, update looker and scim db
       if (email !== "") {
-        const lookerUserCredsEmail = await sdk.ok(
+        await sdk.ok(
           sdk.update_user_credentials_email(id, { email: email })
         );
         dbUser = updateUserRecord(req, id, "email", email);
@@ -214,7 +199,6 @@ export default app
         email = lookerUser.email!;
       }
 
-      // if user attributes in patch op, set all UAs
       if (Object.keys(updatedUAs).length > 0) {
         if (!(await updateUserAttributes(req, res, sdk, id, updatedUAs))) {
           return;

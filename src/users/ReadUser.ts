@@ -15,22 +15,20 @@ limitations under the License.
 */
 
 import express from "express";
-import { LookerNodeSDK } from "@looker/sdk-node/lib/nodeSdk";
 import { Request, Response } from "express-serve-static-core/index";
-import { Schema, ScimUser } from "../types";
-import { IUser } from "@looker/sdk/lib/4.0/models";
+import { ScimUser } from "../types";
+import type { IUser } from "@looker/sdk";
 import { getUserAttributes } from "../shared/userAttributes";
 import { userFound, resourceNotFound } from "../shared/responses";
-import { getUserRecord } from "../shared/dbFunctions";
+import { getUserRecord, getUserRecordByEmail } from "../shared/dbFunctions";
 import { asyncMiddleware } from "../shared/middleware";
 import Logger from "../shared/logger";
+import sdk from "../shared/lookerSdk";
 
-const sdk = LookerNodeSDK.init40();
 const app = express();
 
 export default app
   // https://tools.ietf.org/html/rfc7644#section-3.4.2
-  // search for users with filter on userName and pagination
   .get(
     "/",
     asyncMiddleware(async (req: Request, res: Response) => {
@@ -43,15 +41,60 @@ export default app
         `${req.method} ${req.baseUrl} Start {"filter":"${filter}", "count":${count}, "startIndex":${startIndex}, "page":${page}}`
       );
 
-      // currently only set up with `eq` operater with `userName` (looker email)
-      // https://developer.okta.com/docs/reference/scim/scim-20/#determine-if-the-user-already-exists
       if (filter !== undefined) {
-        const regex = String(filter).match(/userName eq "(.*)"/);
-        if (regex !== null) {
-          userName = regex[1];
+        const userNameMatch = String(filter).match(/userName eq "(.*)"/);
+        const externalIdMatch = String(filter).match(/externalId eq "(.*)"/);
+        if (userNameMatch !== null) {
+          userName = userNameMatch[1];
           Logger.info(
             `${req.method} ${req.baseUrl} Searching for user: ${userName}`
           );
+        } else if (externalIdMatch !== null) {
+          // Azure AD queries by externalId as a fallback matching attribute.
+          // Look up the user in the SCIM db by external_id and return it if found.
+          const dbUser = getUserRecordByEmail("", externalIdMatch[1]);
+          if (dbUser) {
+            try {
+              const lookerUser = await sdk.ok(sdk.user(dbUser.looker_id));
+              const scimUser: ScimUser = {
+                schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
+                meta: { resourceType: "User" },
+                id: lookerUser.id,
+                externalId: dbUser.external_id,
+                active: !lookerUser.is_disabled!,
+                userName: lookerUser.email!,
+                name: {
+                  givenName: lookerUser.first_name!,
+                  familyName: lookerUser.last_name!,
+                },
+                emails: [{ primary: true, value: lookerUser.email!, type: "work" }],
+              };
+              res.status(200).send({
+                schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+                totalResults: 1,
+                Resources: [scimUser],
+                startIndex: 1,
+                itemsPerPage: 1,
+              });
+              Logger.info(
+                `${req.method} ${req.baseUrl} Complete 200: User found by externalId {"id": "${dbUser.looker_id}"}`
+              );
+              return;
+            } catch (error) {
+              // User in db but not in Looker — fall through to empty response
+            }
+          }
+          res.status(200).send({
+            schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+            totalResults: 0,
+            Resources: [],
+            startIndex: 1,
+            itemsPerPage: 100,
+          });
+          Logger.info(
+            `${req.method} ${req.baseUrl} Complete 200: No user found for externalId ${externalIdMatch[1]}`
+          );
+          return;
         } else {
           resourceNotFound(req, res, `Unsupported filter parameter: ${filter}`);
           return;
@@ -95,12 +138,12 @@ export default app
             ],
           };
         })
-        .filter((u) => u.externalId); // only return users that are in scim db
+        .filter((u) => u.externalId);
 
       const listResponse = {
         schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
         totalResults:
-          users.length === count ? count * page + 1 : cleanedUsers.length, // assume more resources could exist
+          users.length === count ? count * page + 1 : cleanedUsers.length,
         Resources: cleanedUsers,
         startIndex: startIndex,
         itemsPerPage: count,
@@ -117,7 +160,6 @@ export default app
   )
 
   // https://tools.ietf.org/html/rfc7644#section-3.4.1
-  // get user by looker id
   .get(
     "/:id",
     asyncMiddleware(async (req: Request, res: Response) => {
