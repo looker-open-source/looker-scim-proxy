@@ -7,14 +7,14 @@ RUN chown node:node /app
 # Switch to unprivileged user for build
 USER node
 
-# Copy package files
-COPY --chown=node:node package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+# Copy package files (reverting back to npm's package-lock.json)
+COPY --chown=node:node package.json package-lock.json* ./
+RUN npm ci
 
 # Copy source and compile
 COPY --chown=node:node tsconfig.json ./
 COPY --chown=node:node src ./src
-RUN yarn run gcp-build
+RUN npm run gcp-build
 
 
 # --- Stage 2: Production ---
@@ -33,9 +33,9 @@ RUN mkdir -p /home/node/app \
 USER node
 WORKDIR /home/node/app
 
-# Install production dependencies only
-COPY --chown=node:node package.json yarn.lock ./
-RUN yarn install --production --frozen-lockfile
+# Install production dependencies only AND clean the npm cache to reduce image size
+COPY --chown=node:node package.json package-lock.json* ./
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy compiled code from the build stage
 COPY --from=build --chown=node:node /app/build ./build
